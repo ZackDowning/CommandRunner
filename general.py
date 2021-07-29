@@ -1,8 +1,10 @@
 import os
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, wait
-from netmiko import ConnectHandler, ssh_exception, SSHDetect
 from icmplib import ping
+from netmiko import ConnectHandler, ssh_exception, SSHDetect
+
 from address_validator import ipv4
 
 # Checks for TextFSM templates within single file bundle if code is frozen
@@ -43,7 +45,7 @@ def reachability(ip_address, count=4):
 
 class Connection:
     """SSH or TELNET Connection Initiator"""
-    def __init__(self, ip_address, username, password, devicetype='autodetect', enable=False, enable_pw=None):
+    def __init__(self, ip_address, username, password, devicetype='autodetect', enable=False, enable_pw=''):
         self.ip_address = ip_address
         self.username = username
         self.password = password
@@ -199,3 +201,83 @@ def mt(function, iterable, threads=50):
     executor = ThreadPoolExecutor(threads)
     futures = [executor.submit(function, val) for val in iterable]
     wait(futures, timeout=None)
+
+
+class MultiThread:
+    """Multithread Initiator"""
+    def __init__(self, function=None, iterable=None, successful_devices=None, failed_devices=None, threads=50):
+        self.successful_devices = successful_devices
+        self.failed_devices = failed_devices
+        self.iterable = iterable
+        self.threads = threads
+        self.function = function
+
+    def mt(self):
+        """Executes multithreading on provided function and iterable"""
+        executor = ThreadPoolExecutor(self.threads)
+        futures = [executor.submit(self.function, val) for val in self.iterable]
+        wait(futures, timeout=None)
+        return self
+
+    def bug(self):
+        """Returns bool if Windows PyInstaller bug is present with provided lists for successful and failed devices"""
+        successful = len(self.successful_devices)
+        failed = len(self.failed_devices)
+        if (successful + failed) == len(self.iterable):
+            return False
+        else:
+            return True
+
+
+class Connectivity:
+    """Checks connectivity of list of IP addresses asyncronously and checks for windows frozen code socket bug\n
+    Returns self attributes:\n
+    successful_devices = [{\n
+    'ip'\n
+    'hostname'\n
+    'con_type'\n
+    'device_type'\n
+    'enable'}]\n
+    failed_devices = [{\n
+    'ip'\n
+    'exception'\n
+    'connectivitiy'\n
+    'authentication'\n
+    'authorization'\n}]"""
+    def __init__(self, mgmt_ip_list, username, password, enable_pw=''):
+        def check(ip):
+            conn = Connection(ip, username, password, enable_pw=enable_pw).check()
+            if conn.authorization:
+                self.successful_devices.append(
+                    {
+                        'ip': ip,
+                        'hostname': conn.hostname,
+                        'con_type': conn.con_type,
+                        'device_type': conn.devicetype,
+                        'enable': conn.enable
+                    }
+                )
+            else:
+                self.failed_devices.append(
+                    {
+                        'ip': ip,
+                        'exception': conn.exception,
+                        'connectivity': conn.connectivity,
+                        'authentication': conn.authentication,
+                        'authorization': conn.authorization
+                    }
+                )
+
+        while True:
+            self.successful_devices = []
+            self.failed_devices = []
+            d = MultiThread(check, mgmt_ip_list).mt()
+            bug = MultiThread(
+                iterable=d.iterable,
+                successful_devices=self.successful_devices,
+                failed_devices=self.failed_devices
+            ).bug()
+            if not bug:
+                break
+            else:
+                time.sleep(7)
