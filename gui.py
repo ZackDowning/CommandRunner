@@ -104,6 +104,7 @@ class ManagementFileBrowseWindow:
                 current_window = w_main(current_window)
             if event == Sg.WIN_CLOSED:
                 break
+        current_window.close()
 
 # def w_template(current_window, mgmt_file):
 #     """Template Window"""
