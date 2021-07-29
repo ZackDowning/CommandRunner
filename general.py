@@ -211,9 +211,12 @@ class MultiThread:
         self.iterable = iterable
         self.threads = threads
         self.function = function
+        self.iter_len = len(iterable)
 
     def mt(self):
         """Executes multithreading on provided function and iterable"""
+        if self.iter_len < 50:
+            self.threads = self.iter_len
         executor = ThreadPoolExecutor(self.threads)
         futures = [executor.submit(self.function, val) for val in self.iterable]
         wait(futures, timeout=None)
@@ -223,7 +226,7 @@ class MultiThread:
         """Returns bool if Windows PyInstaller bug is present with provided lists for successful and failed devices"""
         successful = len(self.successful_devices)
         failed = len(self.failed_devices)
-        if (successful + failed) == len(self.iterable):
+        if (successful + failed) == self.iter_len:
             return False
         else:
             return True
