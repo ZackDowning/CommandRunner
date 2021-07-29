@@ -1,5 +1,5 @@
 from gui import ManagementFileBrowseWindow
-from general import Connection, mt, Connectivity
+from general import Connection, MultiThread, Connectivity
 from getpass import getpass
 import re
 import time
@@ -33,7 +33,6 @@ def output_failed_to_file(failed_list):
 
 class CommandRunner:
     def __init__(self):
-
         def command_runner(device):
             save_cmd = ''
             ip_address = device['ip']
@@ -50,6 +49,7 @@ class CommandRunner:
             if self.save:
                 session.send_command(save_cmd)
             print(f'Done: {ip_address}')
+            self.finished_devices.append(ip_address)
 
         self.mgmt_ips = ManagementFileBrowseWindow().mgmt_ips
         print(banner)
@@ -71,15 +71,22 @@ class CommandRunner:
                     break
             print('Testing Connectivity, authentication, and authorization on devices...')
             self.check = Connectivity(self.mgmt_ips, self.username, self.password, self.enable_pw)
-            successful_devices = self.check.successful_devices
+            bug_count = 0
+            while True:
+                self.finished_devices = []
+                successful_devices = self.check.successful_devices
+                time.sleep(5)
+                if bug_count != 0:
+                    print('Ran into bug with Windows multithreading. Trying again...')
+                print('Sending commands to devices...')
+                MultiThread(command_runner, successful_devices).mt()
+                if len(self.finished_devices) == len(successful_devices):
+                    break
             failed_devices = self.check.failed_devices
             print('Connectivity check finished.')
             if len(failed_devices) != 0:
                 print('See failed_devices.csv for more information on failed devices')
                 output_failed_to_file(failed_devices)
-            time.sleep(5)
-            print('Sending commands to devices...')
-            mt(command_runner, successful_devices)
             print('\nFinished.')
             more_cmds = input('Do you want to send more commands? Y/[N]: ')
             if re.fullmatch(r'[Yy]', more_cmds):
