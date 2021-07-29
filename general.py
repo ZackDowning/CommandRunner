@@ -43,24 +43,28 @@ def reachability(ip_address, count=4):
 
 class Connection:
     """SSH or TELNET Connection Initiator"""
-    def __init__(self, ip_address, username, password, devicetype='autodetect', con_type=None):
+    def __init__(self, ip_address, username, password, devicetype='autodetect', enable=False, enable_pw=None):
         self.ip_address = ip_address
         self.username = username
         self.password = password
         self.hostname = ''
         self.devicetype = devicetype
-        self.con_type = con_type
+        self.con_type = None
         self.exception = 'None'
         self.authentication = False
         self.authorization = False
         self.connectivity = False
         self.session = None
+        self.enable = enable
+        self.enable_pw = enable_pw
         self.device = {
             'device_type': self.devicetype,
             'ip': ip_address,
             'username': username,
             'password': password
         }
+        if self.enable:
+            self.device['secret'] = self.enable_pw
 
     def check(self):
         """Base connectivity check method of device returning updated self attributes:\n
@@ -90,7 +94,15 @@ class Connection:
                 showver = self.session.send_command('show version', use_textfsm=True)
                 if not showver.__contains__('Failed'):
                     self.hostname = showver[0]['hostname']
-                    self.authorization = True
+                    if self.session.send_command('show run').__contains__('Invalid input detected'):
+                        self.enable = True
+                        self.device['secret'] = self.enable_pw
+                        self.session = ConnectHandler(**self.device)
+                        self.session.enable()
+                        if not self.session.send_command('show run').__contains__('Invalid input detected'):
+                            self.authorization = True
+                    else:
+                        self.authorization = True
                 self.authentication = True
                 self.connectivity = True
                 self.con_type = 'SSH'
@@ -105,7 +117,15 @@ class Connection:
                         showver = self.session.send_command('show version', use_textfsm=True)
                         if not showver.__contains__('Failed'):
                             self.hostname = showver[0]['hostname']
-                            self.authorization = True
+                            if self.session.send_command('show run').__contains__('Invalid input detected'):
+                                self.enable = True
+                                self.device['secret'] = self.enable_pw
+                                self.session = ConnectHandler(**self.device)
+                                self.session.enable()
+                                if not self.session.send_command('show run').__contains__('Invalid input detected'):
+                                    self.authorization = True
+                            else:
+                                self.authorization = True
                         self.authentication = True
                         self.connectivity = True
                         self.con_type = 'TELNET'
@@ -117,7 +137,15 @@ class Connection:
                         showver = self.session.send_command('show version', use_textfsm=True)
                         if not showver.__contains__('Failed'):
                             self.hostname = showver[0]['hostname']
-                            self.authorization = True
+                            if self.session.send_command('show run').__contains__('Invalid input detected'):
+                                self.enable = True
+                                self.device['secret'] = self.enable_pw
+                                self.session = ConnectHandler(**self.device)
+                                self.session.enable()
+                                if not self.session.send_command('show run').__contains__('Invalid input detected'):
+                                    self.authorization = True
+                            else:
+                                self.authorization = True
                         self.authentication = True
                         self.connectivity = True
                         self.con_type = 'TELNET'
@@ -147,11 +175,9 @@ class Connection:
         exception"""
         if reachability(self.ip_address):
             try:
-                if self.con_type == 'TELNET':
-                    self.device['secret'] = self.password
-                    self.session = ConnectHandler(**self.device)
-                else:
-                    self.session = ConnectHandler(**self.device)
+                self.session = ConnectHandler(**self.device)
+                if self.enable:
+                    self.session.enable()
             except ConnectionRefusedError:
                 self.exception = 'ConnectionRefusedError'
             except ssh_exception.NetmikoAuthenticationException:
