@@ -11,7 +11,7 @@ f = {
 s_font = f'{f["font"]} {f["size"]["small"]}'
 m_font = f'{f["font"]} {f["size"]["medium"]}'
 l_font = f'{f["font"]} {f["size"]["large"]}'
-window_title = 'Access Mapper'
+window_title = 'CommandRunner'
 
 
 def gui_print(string, font=m_font):
