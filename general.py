@@ -197,12 +197,6 @@ class Connection:
         return self
 
 
-def mt(function, iterable, threads=50):
-    executor = ThreadPoolExecutor(threads)
-    futures = [executor.submit(function, val) for val in iterable]
-    wait(futures, timeout=None)
-
-
 class MultiThread:
     """Multithread Initiator"""
     def __init__(self, function=None, iterable=None, successful_devices=None, failed_devices=None, threads=50):
