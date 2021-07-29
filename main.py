@@ -70,6 +70,7 @@ class CommandRunner:
                     self.save = False
                     break
             print('Testing Connectivity, authentication, and authorization on devices...')
+            start = time.perf_counter()
             self.check = Connectivity(self.mgmt_ips, self.username, self.password, self.enable_pw)
             bug_count = 0
             while True:
@@ -83,7 +84,8 @@ class CommandRunner:
                 if len(self.finished_devices) == len(successful_devices):
                     break
             failed_devices = self.check.failed_devices
-            print('Connectivity check finished.')
+            end = time.perf_counter()
+            print(f'Connectivity check finished in {int(round(end - start, 0))} seconds.')
             if len(failed_devices) != 0:
                 print('See failed_devices.csv for more information on failed devices')
                 output_failed_to_file(failed_devices)
