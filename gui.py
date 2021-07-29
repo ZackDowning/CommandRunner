@@ -1,4 +1,5 @@
 import PySimpleGUI as Sg
+from general import MgmtIPAddresses
 
 f = {
     'font': 'Helvetica',
@@ -79,6 +80,30 @@ def w_invalid_file_entry(current_window, mgmt_file):
         button('Retry')
     ]
     return Sg.Window(window_title, layout, margins=(100, 100))
+
+
+class ManagementFileBrowseWindow:
+    def __init__(self):
+        current_window = w_main()
+        self.mgmt_ips = None
+
+        while True:
+            event, values = current_window.read(timeout=10)
+            if event == 'Check File' or event == 'Retry':
+                try:
+                    Sg.user_settings_set_entry('-filename-', values['file'])
+                    mgmt_file = MgmtIPAddresses(values['file'])
+                    if mgmt_file.validate:
+                        self.mgmt_ips = mgmt_file.mgmt_ips
+                        break
+                    else:
+                        current_window = w_invalid_file_entry(current_window, mgmt_file)
+                except FileNotFoundError:
+                    current_window = w_file_not_found(current_window)
+            if event == 'Main Page':
+                current_window = w_main(current_window)
+            if event == Sg.WIN_CLOSED:
+                break
 
 # def w_template(current_window, mgmt_file):
 #     """Template Window"""
