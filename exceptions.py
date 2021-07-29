@@ -1,0 +1,3 @@
+class TemplatesNotFoundWithinPackage(Exception):
+    pass
+
