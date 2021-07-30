@@ -77,7 +77,7 @@ class CommandRunner:
                     elif re.fullmatch(r'[Nn]', self.save):
                         self.save = False
                         break
-                print('Testing Connectivity, authentication, and authorization on devices...')
+                print('Testing connectivity, authentication, and authorization on devices...')
                 start = time.perf_counter()
                 self.check = Connectivity(self.mgmt_ips, self.username, self.password, self.enable_pw)
                 bug_count = 0
@@ -92,11 +92,13 @@ class CommandRunner:
                         MultiThread(command_runner, successful_devices).mt()
                         if len(self.finished_devices) == len(successful_devices):
                             break
+                        else:
+                            bug_count += 1
                     except ValueError:
                         print('Did not recieve ICMP Echo reply from any device.')
                 failed_devices = self.check.failed_devices
                 end = time.perf_counter()
-                print(f'Connectivity check finished in {int(round(end - start, 0))} seconds.')
+                print(f'Commands ran in {int(round(end - start, 0))} seconds.')
                 if len(failed_devices) != 0:
                     print('See failed_devices.csv for more information on failed devices')
                     output_failed_to_file(failed_devices)
