@@ -1,2 +1,0 @@
-ip_address,connectivity,authentication,authorization,con_exception
-10.39.16.6,False,False,False,NoPingEcho

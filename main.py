@@ -49,11 +49,11 @@ class CommandRunner:
             if self.commands[0] != '':
                 with Connection(ip_address, self.username, self.password, device_type, enable, self.enable_pw
                                 ).connection().session as session:
-                    session.send_config_set(self.commands)
+                    session.send_config_set(self.commands, delay_factor=4)
             if self.save:
                 with Connection(ip_address, self.username, self.password, device_type, enable, self.enable_pw
                                 ).connection().session as session:
-                    session.send_command(save_cmd)
+                    session.send_command(save_cmd, delay_factor=4)
             print(f'Done: {ip_address}')
             self.finished_devices.append(ip_address)
 
@@ -98,8 +98,11 @@ class CommandRunner:
                         if len(self.finished_devices) == len(successful_devices):
                             break
                         else:
-                            print(f'Finished: {len(self.finished_devices)}')
-                            print(f'Successful: {len(successful_devices)}')
+                            # For debugging
+                            bug_devices = []
+                            for s_device in successful_devices:
+                                if all(s_device['ip'] != f_device for f_device in self.finished_devices):
+                                    bug_devices.append(s_device)
                             bug_count += 1
                     except ValueError:
                         print('Did not recieve ICMP Echo reply from any device.')
