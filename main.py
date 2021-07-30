@@ -46,19 +46,25 @@ class CommandRunner:
                 save_cmd = 'wr'
             elif device_type == 'cisco_nxos':
                 save_cmd = 'copy run start'
-            session = Connection(
-                ip_address, self.username, self.password, device_type, enable, self.enable_pw).connection().session
-            if len(self.commands) != 0:
-                session.send_config_set(self.commands)
+            if self.commands[0] != '':
+                with Connection(ip_address, self.username, self.password, device_type, enable, self.enable_pw
+                                ).connection().session as session:
+                    session.send_config_set(self.commands)
             if self.save:
-                session.send_command(save_cmd)
+                with Connection(ip_address, self.username, self.password, device_type, enable, self.enable_pw
+                                ).connection().session as session:
+                    session.send_command(save_cmd)
             print(f'Done: {ip_address}')
             self.finished_devices.append(ip_address)
 
         self.mgmt_ips = ManagementFileBrowseWindow().mgmt_ips
         print(banner)
-        if len(self.mgmt_ips) == 0:
-            print('No IP addresses found in file provided.')
+        try:
+            if len(self.mgmt_ips) == 0:
+                print('No IP addresses found in file provided.')
+                input('Press Enter to close.')
+        except TypeError:
+            print('No file provided.')
             input('Press Enter to close.')
         else:
             self.username = input('Enter Username: ')
@@ -84,7 +90,6 @@ class CommandRunner:
                 while True:
                     self.finished_devices = []
                     successful_devices = self.check.successful_devices
-                    time.sleep(5)
                     if bug_count != 0:
                         print('Ran into bug with Windows multithreading. Trying again...')
                     print('Sending commands to devices...')
@@ -93,9 +98,12 @@ class CommandRunner:
                         if len(self.finished_devices) == len(successful_devices):
                             break
                         else:
+                            print(f'Finished: {len(self.finished_devices)}')
+                            print(f'Successful: {len(successful_devices)}')
                             bug_count += 1
                     except ValueError:
                         print('Did not recieve ICMP Echo reply from any device.')
+                        break
                 failed_devices = self.check.failed_devices
                 end = time.perf_counter()
                 print(f'Commands ran in {int(round(end - start, 0))} seconds.')
