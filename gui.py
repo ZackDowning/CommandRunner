@@ -75,7 +75,7 @@ def w_invalid_file_entry(current_window, mgmt_file):
     layout = [
         gui_print('Invalid File Entries'),
         gui_print_box(invalid_lines, size=(30, 15)),
-        gui_print('Select file containing switch management IP addresses'),
+        gui_print('Select file containing device management IP addresses'),
         file_browse_botton('Browse'),
         button('Retry')
     ]
