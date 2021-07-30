@@ -63,7 +63,8 @@ class Connection:
             'device_type': self.devicetype,
             'ip': ip_address,
             'username': username,
-            'password': password
+            'password': password,
+            'fast_cli': False
         }
         if self.enable:
             self.device['secret'] = self.enable_pw
@@ -83,15 +84,15 @@ class Connection:
                 if self.enable:
                     with ConnectHandler(**device) as session:
                         session.enable()
-                        if not session.send_command('show run').__contains__('Invalid input detected'):
+                        if not session.send_command('show run', delay_factor=4).__contains__('Invalid input detected'):
                             self.authorization = True
                     break
                 else:
                     with ConnectHandler(**device) as session:
-                        showver = session.send_command('show version', use_textfsm=True)
+                        showver = session.send_command('show version', delay_factor=4, use_textfsm=True)
                         if not showver.__contains__('Failed'):
                             self.hostname = showver[0]['hostname']
-                            if session.send_command('show run').__contains__('Invalid input detected'):
+                            if session.send_command('show run', delay_factor=4).__contains__('Invalid input detected'):
                                 self.enable = True
                                 self.device['secret'] = self.enable_pw
                             else:
@@ -259,7 +260,7 @@ class Connectivity:
                 successful_devices=self.successful_devices,
                 failed_devices=self.failed_devices
             ).bug()
-            if not bug:
-                break
-            else:
+            if bug:
                 time.sleep(7)
+            else:
+                break
