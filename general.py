@@ -77,34 +77,45 @@ class Connection:
         authentication\n
         authorization\n
         connectivity"""
+
+        def device_check(device):
+            while True:
+                if self.enable:
+                    with ConnectHandler(**device) as session:
+                        session.enable()
+                        if not session.send_command('show run').__contains__('Invalid input detected'):
+                            self.authorization = True
+                    break
+                else:
+                    with ConnectHandler(**device) as session:
+                        showver = session.send_command('show version', use_textfsm=True)
+                        if not showver.__contains__('Failed'):
+                            self.hostname = showver[0]['hostname']
+                            if session.send_command('show run').__contains__('Invalid input detected'):
+                                self.enable = True
+                                self.device['secret'] = self.enable_pw
+                            else:
+                                self.authorization = True
+                                break
+                        else:
+                            break
+
         if reachability(self.ip_address):
             try:
                 try:
                     autodetect = SSHDetect(**self.device).autodetect()
                     self.device['device_type'] = autodetect
                     self.devicetype = autodetect
-                    self.session = ConnectHandler(**self.device)
+                    device_check(self.device)
                 except ValueError:
                     try:
                         self.device['device_type'] = 'cisco_ios'
                         self.devicetype = 'cisco_ios'
-                        self.session = ConnectHandler(**self.device)
+                        device_check(self.device)
                     except ValueError:
                         self.device['device_type'] = 'cisco_ios'
                         self.devicetype = 'cisco_ios'
-                        self.session = ConnectHandler(**self.device)
-                showver = self.session.send_command('show version', use_textfsm=True)
-                if not showver.__contains__('Failed'):
-                    self.hostname = showver[0]['hostname']
-                    if self.session.send_command('show run').__contains__('Invalid input detected'):
-                        self.enable = True
-                        self.device['secret'] = self.enable_pw
-                        self.session = ConnectHandler(**self.device)
-                        self.session.enable()
-                        if not self.session.send_command('show run').__contains__('Invalid input detected'):
-                            self.authorization = True
-                    else:
-                        self.authorization = True
+                        device_check(self.device)
                 self.authentication = True
                 self.connectivity = True
                 self.con_type = 'SSH'
@@ -115,19 +126,7 @@ class Connection:
                         self.device['device_type'] = 'cisco_ios_telnet'
                         self.devicetype = 'cisco_ios_telnet'
                         self.device['secret'] = self.password
-                        self.session = ConnectHandler(**self.device)
-                        showver = self.session.send_command('show version', use_textfsm=True)
-                        if not showver.__contains__('Failed'):
-                            self.hostname = showver[0]['hostname']
-                            if self.session.send_command('show run').__contains__('Invalid input detected'):
-                                self.enable = True
-                                self.device['secret'] = self.enable_pw
-                                self.session = ConnectHandler(**self.device)
-                                self.session.enable()
-                                if not self.session.send_command('show run').__contains__('Invalid input detected'):
-                                    self.authorization = True
-                            else:
-                                self.authorization = True
+                        device_check(self.device)
                         self.authentication = True
                         self.connectivity = True
                         self.con_type = 'TELNET'
@@ -135,19 +134,7 @@ class Connection:
                         self.device['device_type'] = 'cisco_ios_telnet'
                         self.devicetype = 'cisco_ios_telnet'
                         self.device['secret'] = self.password
-                        self.session = ConnectHandler(**self.device)
-                        showver = self.session.send_command('show version', use_textfsm=True)
-                        if not showver.__contains__('Failed'):
-                            self.hostname = showver[0]['hostname']
-                            if self.session.send_command('show run').__contains__('Invalid input detected'):
-                                self.enable = True
-                                self.device['secret'] = self.enable_pw
-                                self.session = ConnectHandler(**self.device)
-                                self.session.enable()
-                                if not self.session.send_command('show run').__contains__('Invalid input detected'):
-                                    self.authorization = True
-                            else:
-                                self.authorization = True
+                        device_check(self.device)
                         self.authentication = True
                         self.connectivity = True
                         self.con_type = 'TELNET'
@@ -164,8 +151,6 @@ class Connection:
                     self.exception = 'TimeoutError'
             except OSError:
                 self.exception = 'OSError'
-            if self.session is not None:
-                self.session.disconnect()
         else:
             self.exception = 'NoPingEcho'
         return self
