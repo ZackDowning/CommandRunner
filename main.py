@@ -5,6 +5,7 @@ import re
 import time
 
 # TODO: Add comments
+# TODO: Make into package
 # TODO: Add logging for unexpected errors
 
 # PyInstaller bundle command:
