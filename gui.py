@@ -41,7 +41,7 @@ def w_main(current_window=None):
     if current_window is not None:
         current_window.close()
     layout = [
-        gui_print('Select file containing switch management IP addresses'),
+        gui_print('Select file containing device management IP addresses'),
         file_browse_botton('Browse'),
         button('Check File')
     ]
