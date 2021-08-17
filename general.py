@@ -4,7 +4,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from icmplib import ping
 from netmiko import ConnectHandler, ssh_exception, SSHDetect
-
 from address_validator import ipv4
 
 # Checks for TextFSM templates within single file bundle if code is frozen
