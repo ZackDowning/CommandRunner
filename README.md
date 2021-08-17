@@ -18,4 +18,4 @@ General use case is for simple and fast configuration management at scale.
 ### File Selection
 ![alt text](https://i.imgur.com/DM1l7NL.png)
 ### Terminal
-![alt text](https://i.imgur.com/OGOfVQX.png)
+![alt text](https://i.imgur.com/aDrof02.png)
