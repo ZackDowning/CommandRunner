@@ -5,11 +5,11 @@ import re
 import time
 
 # TODO: Add comments
-# TODO: Make into package
 # TODO: Add logging for unexpected errors
+# TODO: Add support for config file
 
 # PyInstaller bundle command:
-# pyinstaller -F --hidden-import PySimpleGUI --add-data templates;templates main.py
+# pyinstaller -F --hidden-import PySimpleGUI,net_async --add-data templates;templates main.py
 
 banner = '   ______                                          ______                             \n'\
          '  / ____/___  ____ ___  ____ ___  ____ _____  ____/ / __ \\__  ______  ____  ___  _____\n'\
