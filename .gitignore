@@ -6,3 +6,4 @@
 /dist/*
 *.spec
 CommandRunner.exe
+error_log.txt

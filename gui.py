@@ -36,6 +36,12 @@ def file_browse_botton(string, font=m_font):
         Sg.FileBrowse(str(string), initial_folder='./', font=font)]
 
 
+def config_file_browse_botton(string, font=m_font):
+    return [
+        Sg.Input(Sg.user_settings_get_entry('-config-', ''), key='config'),
+        Sg.FileBrowse(str(string), initial_folder='./', font=font)]
+
+
 def w_main(current_window=None):
     """Main / Home Window"""
     if current_window is not None:
@@ -48,12 +54,36 @@ def w_main(current_window=None):
     return Sg.Window(window_title, layout, margins=(100, 100))
 
 
+def w_config_file(current_window=None):
+    """Config File Browse Window"""
+    if current_window is not None:
+        current_window.close()
+    layout = [
+        gui_print('Select file containing device configuration'),
+        config_file_browse_botton('Browse'),
+        button('Push Config')
+    ]
+    return Sg.Window(window_title, layout, margins=(100, 100))
+
+
 def w_file_not_found(current_window):
     """File Not Found Window and Retry"""
     current_window.close()
     layout = [
         gui_print('File or directory not found.'),
-        gui_print('Select file containing switch management IP addresses'),
+        gui_print('Select file containing device management IP addresses'),
+        file_browse_botton('Browse'),
+        button('Retry')
+    ]
+    return Sg.Window(window_title, layout, margins=(100, 100))
+
+
+def w_config_file_not_found(current_window):
+    """Config File Not Found Window and Retry"""
+    current_window.close()
+    layout = [
+        gui_print('File or directory not found.'),
+        gui_print('Select file containing device configuration'),
         file_browse_botton('Browse'),
         button('Retry')
     ]
@@ -102,6 +132,26 @@ class ManagementFileBrowseWindow:
                     current_window = w_file_not_found(current_window)
             if event == 'Main Page':
                 current_window = w_main(current_window)
+            if event == Sg.WIN_CLOSED:
+                break
+        current_window.close()
+
+
+class ConfigFileBrowseWindow:
+    def __init__(self):
+        current_window = w_config_file()
+        self.cmds = []
+
+        while True:
+            event, values = current_window.read(timeout=10)
+            if event == 'Push Config' or event == 'Retry':
+                try:
+                    Sg.user_settings_set_entry('-config-', values['config'])
+                    with open(values['config']) as config_file:
+                        self.cmds = [line.replace('\n', '') for line in config_file]
+                    break
+                except FileNotFoundError:
+                    current_window = w_config_file_not_found(current_window)
             if event == Sg.WIN_CLOSED:
                 break
         current_window.close()

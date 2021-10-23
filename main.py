@@ -1,20 +1,18 @@
-from gui import ManagementFileBrowseWindow
+from gui import ManagementFileBrowseWindow, ConfigFileBrowseWindow
 from net_async import AsyncSessions, ForceSessionRetry
 from getpass import getpass
 import re
 import time
 
-# TODO: Add comments
-# TODO: Add logging for unexpected errors
 # TODO: Add support for config file
 
 # PyInstaller bundle command:
 # pyinstaller -F --hidden-import PySimpleGUI,net_async --add-data templates;templates main.py
 
-banner = '   ______                                          ______                             \n'\
-         '  / ____/___  ____ ___  ____ ___  ____ _____  ____/ / __ \\__  ______  ____  ___  _____\n'\
-         ' / /   / __ \\/ __ `__ \\/ __ `__ \\/ __ `/ __ \\/ __  / /_/ / / / / __ \\/ __ \\/ _ \\/ ___/\n'\
-         '/ /___/ /_/ / / / / / / / / / / / /_/ / / / / /_/ / _, _/ /_/ / / / / / / /  __/ /    \n'\
+banner = '   ______                                          ______                             \n' \
+         '  / ____/___  ____ ___  ____ ___  ____ _____  ____/ / __ \\__  ______  ____  ___  _____\n' \
+         ' / /   / __ \\/ __ `__ \\/ __ `__ \\/ __ `/ __ \\/ __  / /_/ / / / / __ \\/ __ \\/ _ \\/ ___/\n' \
+         '/ /___/ /_/ / / / / / / / / / / / /_/ / / / / /_/ / _, _/ /_/ / / / / / / /  __/ /    \n' \
          '\\____/\\____/_/ /_/ /_/_/ /_/ /_/\\__,_/_/ /_/\\__,_/_/ |_|\\__,_/_/ /_/_/ /_/\\___/_/     \n'
 
 
@@ -36,72 +34,75 @@ def output_failed_to_file(failed_list):
             )
 
 
-class CommandRunner:
-    def __init__(self):
-        def command_runner(session):
-            save_cmd = ''
-            if session.devicetype == 'cisco_ios' or session.devicetype == 'cisco_ios_telnet':
-                save_cmd = 'wr'
-            elif session.devicetype == 'cisco_nxos':
-                save_cmd = 'copy run start'
-            try:
-                if self.commands[0] != '':
-                    cmd = session.send_config_set(self.commands)
-                    if cmd.__contains__('Authorization failed'):
-                        raise ForceSessionRetry
-            except IndexError:
-                pass
-            if self.save:
-                cmd = session.send_command(save_cmd)
+def command_runner():
+    def cr(session):
+        save_cmd = ''
+        if session.devicetype == 'cisco_ios' or session.devicetype == 'cisco_ios_telnet':
+            save_cmd = 'wr'
+        elif session.devicetype == 'cisco_nxos':
+            save_cmd = 'copy run start'
+        try:
+            if commands[0] != '':
+                cmd = session.send_config_set(commands)
                 if cmd.__contains__('Authorization failed'):
                     raise ForceSessionRetry
+        except IndexError:
+            pass
+        if save:
+            cmd = session.send_command(save_cmd)
+            if cmd.__contains__('Authorization failed'):
+                raise ForceSessionRetry
 
-        mgmt_ips = ManagementFileBrowseWindow().mgmt_ips
-        print(banner)
-        try:
-            if len(mgmt_ips) == 0:
-                print('No IP addresses found in file provided.')
-                input('Press Enter to close.')
-        except TypeError:
-            print('No file provided.')
+    mgmt_ips = ManagementFileBrowseWindow().mgmt_ips
+    print(banner)
+    try:
+        if len(mgmt_ips) == 0:
+            print('No IP addresses found in file provided.')
             input('Press Enter to close.')
-        else:
-            username = input('Enter Username: ')
-            password = getpass('Enter Password: ')
-            enable_pw = getpass('(If applicable) Enter Enable Password: ')
+    except TypeError:
+        print('No file provided.')
+        input('Press Enter to close.')
+    else:
+        username = input('Enter Username: ')
+        password = getpass('Enter Password: ')
+        enable_pw = getpass('(If applicable) Enter Enable Password: ')
+        while True:
+            commands = input(
+                """Type 'use_file' if you want to provide configuration file, or
+enter configuration commands separating each command with a comma and no space.
+Example: interface vlan 1,no ip address,shut
+Commands: """
+            ).split(',')
+            if 'use_file' in commands[0]:
+                commands = ConfigFileBrowseWindow().cmds
             while True:
-                self.commands = input('(If applicable) Enter config commands seperating each command with a comma and '
-                                      'no space.\n'
-                                      'Example: interface vlan 1,no ip address,shut\n'
-                                      'Commands: ').split(',')
-                while True:
-                    self.save = input('Do you want to save the config? [Y]/N: ')
-                    if re.fullmatch(r'[Yy]|', self.save):
-                        self.save = True
-                        break
-                    elif re.fullmatch(r'[Nn]', self.save):
-                        self.save = False
-                        break
-                start = time.perf_counter()
-                print('Sending commands to devices...\n'
-                      '------------------------------------------------')
-                sessions = AsyncSessions(username, password, mgmt_ips, command_runner, enable_pw, True)
-                end = time.perf_counter()
-                print(f'------------------------------------------------'
-                      f'\nCommands ran in {int(round(end - start, 0))} seconds.')
-                if len(sessions.failed_devices) != 0:
-                    print('See failed_devices.csv for more information on failed devices')
-                    output_failed_to_file(sessions.failed_devices)
-                print('\nFinished.')
-                more_cmds = input('Do you want to send more commands? Y/[N]: ')
-                if re.fullmatch(r'[Yy]', more_cmds):
-                    continue
-                elif re.fullmatch(r'[Nn]|', more_cmds):
+                save = input('Do you want to save the config? [Y]/N: ')
+                if re.fullmatch(r'[Yy]|', save):
+                    save = True
                     break
-                else:
+                elif re.fullmatch(r'[Nn]', save):
+                    save = False
                     break
-            input('Press Enter to close.')
+            start = time.perf_counter()
+            print('Sending commands to devices...\n'
+                  '------------------------------------------------')
+            sessions = AsyncSessions(username, password, mgmt_ips, cr, enable_pw, True)
+            end = time.perf_counter()
+            print(f'------------------------------------------------'
+                  f'\nCommands ran in {int(round(end - start, 0))} seconds.')
+            if len(sessions.failed_devices) != 0:
+                print('See failed_devices.csv for more information on failed devices')
+                output_failed_to_file(sessions.failed_devices)
+            print('\nFinished.')
+            more_cmds = input('Do you want to send more commands? Y/[N]: ')
+            if re.fullmatch(r'[Yy]', more_cmds):
+                continue
+            elif re.fullmatch(r'[Nn]|', more_cmds):
+                break
+            else:
+                break
+        input('Press Enter to close.')
 
 
 if __name__ == '__main__':
-    CommandRunner()
+    command_runner()
