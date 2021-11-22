@@ -84,7 +84,7 @@ def w_config_file_not_found(current_window):
     layout = [
         gui_print('File or directory not found.'),
         gui_print('Select file containing device configuration'),
-        file_browse_botton('Browse'),
+        config_file_browse_botton('Browse'),
         button('Retry')
     ]
     return Sg.Window(window_title, layout, margins=(100, 100))
