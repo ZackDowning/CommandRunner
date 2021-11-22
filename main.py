@@ -49,7 +49,9 @@ def command_runner():
         except IndexError:
             pass
         if save:
+            session.session.fast_cli = False
             cmd = session.send_command(save_cmd)
+            # cmd = session.session.save_config()
             if cmd.__contains__('Authorization failed'):
                 raise ForceSessionRetry
 
