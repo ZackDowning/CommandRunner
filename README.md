@@ -1,3 +1,8 @@
+> **Archived: not maintained since 2021.** This repository is read-only and kept for reference. It is not reviewed or fixed any more. Known issues, left as they are:
+> - With a failed SSH login the tool tries the same login again over Telnet (clear text), and SSH host keys are not checked.
+>
+> Run it only on networks you own, and never with an administrator login you cannot change afterwards.
+
 # CommandRunner
 One-file executable for running sets of configuration commands on Cisco IOS(-XE) and NX-OS devices asynchronously.
 
